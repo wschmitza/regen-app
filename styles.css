@@ -238,7 +238,8 @@ main { position: fixed; inset: 0; }
 
 /* --- Radar ----------------------------------------------------------------- */
 #view-radar { flex-direction: column; }
-#map { position: absolute; inset: 0; background: var(--bg); }
+/* Eigener Stapelkontext: verhindert, dass Safari die 3D-transformierten Kartenebenen über die Bedienelemente legt. */
+#map { position: absolute; inset: 0; z-index: 0; isolation: isolate; background: var(--bg); }
 .leaflet-container { background: var(--bg); font-family: var(--font-body); }
 .leaflet-control-attribution {
   background: transparent !important;
@@ -248,13 +249,18 @@ main { position: fixed; inset: 0; }
 }
 .leaflet-control-attribution a { color: inherit !important; }
 .radar-layer { image-rendering: auto; transition: none; }
+@media (prefers-color-scheme: dark) {
+  .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(0.8) contrast(0.9) saturate(0.6); }
+}
 
 .radar-time {
   position: absolute;
-  z-index: 15;
+  z-index: 1000;
+  -webkit-transform: translateZ(0);
   top: calc(var(--safe-top) + 64px);
   left: 50%;
-  transform: translateX(-50%);
+  transform: translate3d(-50%, 0, 0);
+  -webkit-transform: translate3d(-50%, 0, 0);
   display: inline-flex;
   align-items: baseline;
   gap: 8px;
@@ -272,7 +278,8 @@ main { position: fixed; inset: 0; }
 
 .fab {
   position: absolute;
-  z-index: 15;
+  z-index: 1000;
+  -webkit-transform: translateZ(0);
   right: 16px;
   bottom: calc(var(--safe-bottom) + 176px);
   width: 46px;
@@ -288,7 +295,8 @@ main { position: fixed; inset: 0; }
 
 .radar-ctrl {
   position: absolute;
-  z-index: 15;
+  z-index: 1000;
+  -webkit-transform: translateZ(0);
   left: 16px;
   right: 16px;
   bottom: calc(var(--safe-bottom) + 92px);

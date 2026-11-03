@@ -335,20 +335,11 @@ function initMap() {
   const { lat, lon } = S.loc || { lat: 51.16, lon: 10.45 };
   map = L.map('map', { zoomControl: false, attributionControl: true, minZoom: 5, maxZoom: 12 }).setView([lat, lon], 8);
   map.createPane('radar').style.zIndex = 450;
-  map.createPane('labels').style.zIndex = 460;
-  map.getPane('labels').style.pointerEvents = 'none';
-  const dark = matchMedia('(prefers-color-scheme: dark)').matches;
-  const style = dark ? 'dark' : 'light';
-  const base = L.tileLayer(`https://{s}.basemaps.cartocdn.com/${style}_nolabels/{z}/{x}/{y}{r}.png`, {
-    subdomains: 'abcd', maxZoom: 19,
-    attribution: '© <a href="https://www.openstreetmap.org/copyright">OSM</a> · © <a href="https://carto.com/">CARTO</a> · Radar: <a href="https://www.dwd.de/">DWD</a> via <a href="https://brightsky.dev/">Bright Sky</a>',
+  // OpenStreetMap-Standardkacheln (ohne API-Schlüssel). Im Dunkelmodus per CSS-Filter abgedunkelt.
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> · Radar: <a href="https://www.dwd.de/">DWD</a> via <a href="https://brightsky.dev/">Bright Sky</a>',
   }).addTo(map);
-  const labels = L.tileLayer(`https://{s}.basemaps.cartocdn.com/${style}_only_labels/{z}/{x}/{y}{r}.png`, { subdomains: 'abcd', pane: 'labels', maxZoom: 19 }).addTo(map);
-  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-    const st = e.matches ? 'dark' : 'light';
-    base.setUrl(`https://{s}.basemaps.cartocdn.com/${st}_nolabels/{z}/{x}/{y}{r}.png`);
-    labels.setUrl(`https://{s}.basemaps.cartocdn.com/${st}_only_labels/{z}/{x}/{y}{r}.png`);
-  });
   map.attributionControl.setPrefix(false);
   meMarker = L.marker([lat, lon], { icon: L.divIcon({ className: '', html: '<div class="me"></div>', iconSize: [18, 18] }), interactive: false, keyboard: false }).addTo(map);
 

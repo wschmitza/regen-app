@@ -6,7 +6,7 @@ Minimalistische Regen-Web-App fürs iPhone (PWA) mit zwei Bildschirmen: **Jetzt*
 - **DWD-Radar, RV-Produkt** (1 km Auflösung, 5-Minuten-Takt, Vorhersage bis +2 Std), abgerufen über die freie API von [Bright Sky](https://brightsky.dev/docs/#/operations/getRadar). Ein API-Key ist nicht nötig.
 - Prognose für den Standort: Radarwert dort (über 3×3 km geglättet), linear auf Minuten interpoliert. Als Regen gilt alles ab 0,1 mm/h.
 - Radarkarte: Die Rasterdaten werden im Browser aus der DWD-Projektion (polarstereographisch) exakt nach Web-Mercator umgerechnet. Alle Bilder werden vor dem Anzeigen vollständig geladen.
-- Karte: OpenStreetMap / CARTO · Ortssuche: Open-Meteo · Ortsname: BigDataCloud.
+- Karte: © OpenStreetMap (ohne API-Schlüssel) · Ortssuche: Open-Meteo · Ortsname: BigDataCloud.
 - Abdeckung: Deutschland und Grenzregionen.
 
 ## Aufs iPhone bringen
