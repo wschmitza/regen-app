@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>nass.</title>
+  <meta name="description" content="Minutengenau: Wann regnet es – und wie lange?" />
+  <meta name="theme-color" content="#0A0D14" media="(prefers-color-scheme: dark)" />
+  <meta name="theme-color" content="#F2F4F8" media="(prefers-color-scheme: light)" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="nass." />
+  <link rel="apple-touch-icon" href="icons/icon-180.png" />
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="glow" aria-hidden="true"></div>
+  <div class="drops" aria-hidden="true"></div>
+
+  <header class="top">
+    <button id="locBtn" class="loc" aria-label="Ort wählen">
+      <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 2a7 7 0 0 0-7 7c0 5.2 7 13 7 13s7-7.8 7-13a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5Z"/></svg>
+      <span id="locName">Standort …</span>
+      <svg class="chev" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" d="m6 9 6 6 6-6"/></svg>
+    </button>
+    <span id="temp" class="temp"></span>
+  </header>
+
+  <main>
+    <!-- Bildschirm 1: Jetzt -->
+    <section id="view-now" class="view active" aria-label="Vorhersage">
+      <div class="hero" id="hero">
+        <p class="kicker" id="kicker">Moment …</p>
+        <h1 class="big" id="big"><span class="skeleton"></span></h1>
+        <p class="sub" id="sub"></p>
+        <p class="tag" id="tag"></p>
+      </div>
+
+      <div class="card chart-card">
+        <div class="chart-head">
+          <span class="chart-title">Minute für Minute</span>
+          <span class="scrub-info" id="scrubInfo"></span>
+        </div>
+        <div class="chart" id="chart" role="img" aria-label="Regenintensität Minute für Minute"></div>
+        <div class="axis" id="axis"></div>
+        <div class="legend">
+          <span><i class="l-light"></i>leicht</span>
+          <span><i class="l-moderate"></i>mäßig</span>
+          <span><i class="l-heavy"></i>stark</span>
+          <span><i class="l-extreme"></i>heftig</span>
+        </div>
+      </div>
+
+      <div class="foot">
+        <button id="alertBtn" class="chip" aria-pressed="false">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22Zm7-6V11a7 7 0 0 0-5.5-6.84V3.5a1.5 1.5 0 0 0-3 0v.66A7 7 0 0 0 5 11v5l-2 2v1h18v-1l-2-2Z"/></svg>
+          <span id="alertLabel">Regen-Alarm aus</span>
+        </button>
+        <button id="refreshBtn" class="meta" aria-label="Aktualisieren"><span id="updated">–</span></button>
+      </div>
+    </section>
+
+    <!-- Bildschirm 2: Radar -->
+    <section id="view-radar" class="view" aria-label="Regenradar">
+      <div id="map"></div>
+      <div class="radar-time" id="radarTime"><b>–</b><span></span></div>
+      <button class="fab" id="recenter" aria-label="Zu meinem Ort">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm9 3h-2.07A7 7 0 0 0 13 5.07V3h-2v2.07A7 7 0 0 0 5.07 11H3v2h2.07A7 7 0 0 0 11 18.93V21h2v-2.07A7 7 0 0 0 18.93 13H21v-2Zm-9 6a5 5 0 1 1 0-10 5 5 0 0 1 0 10Z"/></svg>
+      </button>
+      <div class="radar-ctrl">
+        <button id="play" class="play" aria-label="Abspielen">
+          <svg class="i-play" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5Z"/></svg>
+          <svg class="i-pause" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z"/></svg>
+        </button>
+        <div class="scrub">
+          <div class="track" id="track"><div class="future" id="future"></div><div class="nowmark" id="nowmark"></div></div>
+          <input type="range" id="scrub" min="0" max="0" value="0" step="1" aria-label="Zeitpunkt" />
+          <div class="scrub-labels"><span>−1 Std</span><span>Jetzt</span><span>+2 Std</span></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <nav class="tabs" role="tablist">
+    <button role="tab" data-view="now" class="active" aria-selected="true">Jetzt</button>
+    <button role="tab" data-view="radar" aria-selected="false">Radar</button>
+    <span class="pill" aria-hidden="true"></span>
+  </nav>
+
+  <dialog id="locSheet" class="sheet">
+    <form method="dialog" class="sheet-inner" id="locForm">
+      <div class="sheet-grab"></div>
+      <h2>Wo willst du's wissen?</h2>
+      <button type="button" id="useGps" class="gps">
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M21 3 3 10.5l7.5 3L13.5 21 21 3Z"/></svg>
+        Mein Standort
+      </button>
+      <input id="search" type="search" placeholder="Stadt suchen …" autocomplete="off" enterkeyhint="search" />
+      <ul id="results" class="results"></ul>
+      <button value="cancel" class="close">Schließen</button>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
