@@ -209,6 +209,8 @@ main { position: fixed; inset: 0; }
 .chart svg { display: block; width: 100%; height: 100%; overflow: visible; }
 .chart .cursor { stroke: var(--text); stroke-width: 1.5; opacity: 0; }
 .chart.scrubbing .cursor { opacity: 0.8; }
+.chart .cursor-dot { stroke: var(--text); stroke-width: 2.5; opacity: 0; }
+.chart.scrubbing .cursor-dot { opacity: 1; }
 .axis { position: relative; height: 18px; margin-top: 8px; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .axis span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
 .axis span:first-child { transform: none; color: var(--text); font-weight: 600; }

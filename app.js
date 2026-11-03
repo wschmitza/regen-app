@@ -116,40 +116,80 @@ const COLORS = () => {
 };
 
 let chartMinutes = [];
+let chartGeom = null; // { W, H, xs, ys } für den Finger-Cursor
+
+// Monotone kubische Interpolation (Fritsch–Carlson): glatte Kurve ohne Überschwinger unter die Nulllinie.
+function smoothPath(xs, ys) {
+  const n = xs.length;
+  if (n < 2) return '';
+  const d = [];
+  const m = new Array(n).fill(0);
+  for (let i = 0; i < n - 1; i++) d.push((ys[i + 1] - ys[i]) / (xs[i + 1] - xs[i]));
+  m[0] = d[0];
+  m[n - 1] = d[n - 2];
+  for (let i = 1; i < n - 1; i++) m[i] = d[i - 1] * d[i] <= 0 ? 0 : (d[i - 1] + d[i]) / 2;
+  for (let i = 0; i < n - 1; i++) {
+    if (d[i] === 0) { m[i] = 0; m[i + 1] = 0; continue; }
+    const a = m[i] / d[i];
+    const b = m[i + 1] / d[i];
+    const h = a * a + b * b;
+    if (h > 9) { const t = 3 / Math.sqrt(h); m[i] = t * a * d[i]; m[i + 1] = t * b * d[i]; }
+  }
+  let p = `M${xs[0].toFixed(2)},${ys[0].toFixed(2)}`;
+  for (let i = 0; i < n - 1; i++) {
+    const dx = (xs[i + 1] - xs[i]) / 3;
+    p += `C${(xs[i] + dx).toFixed(2)},${(ys[i] + m[i] * dx).toFixed(2)} ${(xs[i + 1] - dx).toFixed(2)},${(ys[i + 1] - m[i + 1] * dx).toFixed(2)} ${xs[i + 1].toFixed(2)},${ys[i + 1].toFixed(2)}`;
+  }
+  return p;
+}
+
 function renderChart() {
   const el = $('#chart');
   const min = minuteSeries(S.points);
   chartMinutes = min;
   const W = el.clientWidth || 320;
   const H = el.clientHeight || 112;
-  if (!min.length) { el.innerHTML = ''; $('#axis').innerHTML = ''; return; }
+  if (!min.length) { el.innerHTML = ''; $('#axis').innerHTML = ''; chartGeom = null; return; }
   const n = min.length;
-  const step = W / n;
-  const bw = Math.max(1, step * 0.62);
   const c = COLORS();
   const maxLog = Math.log1p(30);
-  let bars = '';
-  for (let i = 0; i < n; i++) {
-    const v = min[i].mmh;
-    const lvl = intensity(v);
-    const x = i * step + (step - bw) / 2;
-    if (v < RAIN_MIN) {
-      bars += `<rect x="${x.toFixed(2)}" y="${H - 3}" width="${bw.toFixed(2)}" height="3" rx="1" fill="${c.none}"/>`;
-    } else {
-      const h = 8 + (H - 8) * Math.min(1, Math.log1p(v) / maxLog);
-      bars += `<rect x="${x.toFixed(2)}" y="${(H - h).toFixed(2)}" width="${bw.toFixed(2)}" height="${h.toFixed(2)}" rx="${Math.min(bw / 2, 3).toFixed(2)}" fill="${c[lvl.key]}"/>`;
-    }
-  }
-  // Hilfslinien für leicht/mäßig/stark
-  const gy = (v) => (H - (8 + (H - 8) * Math.min(1, Math.log1p(v) / maxLog))).toFixed(1);
+  const BASE = H - 2; // Nulllinie
+  const yOf = (v) => (v < RAIN_MIN ? BASE : BASE - (6 + (BASE - 10) * Math.min(1, Math.log1p(v) / maxLog)));
+  const xs = min.map((_, i) => (n > 1 ? (i / (n - 1)) * W : 0));
+  const ys = min.map((m) => yOf(m.mmh));
+  chartGeom = { W, H, xs, ys };
+
+  // Farbverlauf nach Höhe: die Kurve färbt sich je nach Intensität (trocken → leicht → mäßig → stark → heftig).
+  const off = (y) => Math.max(0, Math.min(1, (H - y) / H)).toFixed(3);
+  const edge = (v) => yOf(v);
+  const stops = [
+    [off(BASE + 0.5), c.none], [off(BASE - 2), c.none],
+    [off(BASE - 4), c.light], [off(edge(2.5) + 2), c.light],
+    [off(edge(2.5) - 2), c.moderate], [off(edge(10) + 2), c.moderate],
+    [off(edge(10) - 2), c.heavy], [off(edge(25) + 2), c.heavy],
+    [off(edge(25) - 2), c.extreme], ['1', c.extreme],
+  ].map(([o, col]) => `<stop offset="${o}" stop-color="${col}"/>`).join('');
+  const line = smoothPath(xs, ys);
+  const area = `${line}L${W},${H}L0,${H}Z`;
   const guides = [2.5, 10]
-    .map((v) => `<line x1="0" x2="${W}" y1="${gy(v)}" y2="${gy(v)}" stroke="${c.none}" stroke-dasharray="2 4"/>`)
+    .map((v) => `<line x1="0" x2="${W}" y1="${yOf(v).toFixed(1)}" y2="${yOf(v).toFixed(1)}" stroke="${c.none}" stroke-dasharray="2 4"/>`)
     .join('');
-  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">${guides}${bars}<line class="cursor" id="cursor" x1="0" x2="0" y1="-6" y2="${H}"/></svg>`;
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+    <defs>
+      <linearGradient id="rg" gradientUnits="userSpaceOnUse" x1="0" y1="${H}" x2="0" y2="0">${stops}</linearGradient>
+      <linearGradient id="fade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset="1" stop-color="#fff" stop-opacity=".08"/></linearGradient>
+      <mask id="fm"><rect width="${W}" height="${H}" fill="url(#fade)"/></mask>
+    </defs>
+    ${guides}
+    <path d="${area}" fill="url(#rg)" mask="url(#fm)"/>
+    <path d="${line}" fill="none" stroke="url(#rg)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+    <line class="cursor" id="cursor" x1="0" x2="0" y1="-6" y2="${H}"/>
+    <circle class="cursor-dot" id="cursorDot" cx="0" cy="${BASE}" r="5"/>
+  </svg>`;
 
   // Achse: Jetzt + alle 30 Min
   let axis = `<span style="left:0">Jetzt</span>`;
-  for (let m = 30; m < n - 8; m += 30) axis += `<span style="left:${(m * step).toFixed(1)}px">${fmtTime(min[m].t)}</span>`;
+  for (let m = 30; m < n - 8; m += 30) axis += `<span style="left:${xs[m].toFixed(1)}px">${fmtTime(min[m].t)}</span>`;
   axis += `<span style="left:100%">${fmtTime(min[n - 1].t)}</span>`;
   $('#axis').innerHTML = axis;
 }
@@ -161,13 +201,17 @@ function setupChartScrub() {
     if (!chartMinutes.length) return;
     const r = el.getBoundingClientRect();
     const f = Math.min(0.9999, Math.max(0, (e.clientX - r.left) / r.width));
-    const i = Math.floor(f * chartMinutes.length);
+    const i = Math.round(f * (chartMinutes.length - 1));
     const m = chartMinutes[i];
     const cur = $('#cursor');
-    if (cur) {
-      const x = ((i + 0.5) * r.width) / chartMinutes.length;
+    const dot = $('#cursorDot');
+    if (cur && chartGeom) {
+      const x = chartGeom.xs[i];
       cur.setAttribute('x1', x);
       cur.setAttribute('x2', x);
+      dot.setAttribute('cx', x);
+      dot.setAttribute('cy', chartGeom.ys[i]);
+      dot.setAttribute('fill', COLORS()[intensity(m.mmh).key]);
     }
     el.classList.add('scrubbing');
     const lvl = intensity(m.mmh);
