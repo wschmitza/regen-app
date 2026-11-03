@@ -371,8 +371,15 @@ async function maybeRefetchForMap() {
   } catch (e) { console.warn(e); }
 }
 
-async function setMapData(radar, home) {
+// Radar-Zeitleiste: letzte Stunde + eine Stunde Vorhersage.
+const MAP_PAST_MS = 62 * 60e3;
+const MAP_FUTURE_MS = 62 * 60e3;
+
+async function setMapData(fullRadar, home) {
   const id = ++mapBuildId;
+  const t0 = Date.now();
+  const radar = { ...fullRadar, frames: fullRadar.frames.filter((f) => f.time >= t0 - MAP_PAST_MS && f.time <= t0 + MAP_FUTURE_MS) };
+  if (!radar.frames.length) return;
   const { bounds, urls } = await buildImages(radar);
   if (id !== mapBuildId) { urls.forEach(URL.revokeObjectURL); return; }
   // Alle Bilder vorladen, bevor wir umschalten – kein Flackern, keine Lücken.
@@ -390,7 +397,7 @@ async function setMapData(radar, home) {
   const now = Date.now();
   let nowIndex = 0;
   frames.forEach((f, i) => { if (f.time <= now) nowIndex = i; });
-  mapData = { radar, home, overlays, urls, frames, nowIndex };
+  mapData = { radar: fullRadar, home, overlays, urls, frames, nowIndex };
 
   const scrub = $('#scrub');
   scrub.max = String(frames.length - 1);
@@ -399,7 +406,7 @@ async function setMapData(radar, home) {
   $('#future').style.left = firstFc < 0 ? '100%' : `${pct(firstFc - 0.5)}%`;
   $('#nowmark').style.left = `calc(${pct(nowIndex)}% - 1px)`;
   const labels = document.querySelector('.scrub-labels');
-  labels.innerHTML = `<span>${fmtTime(frames[0].time)}</span><span>Jetzt</span><span>${fmtTime(frames[frames.length - 1].time)}</span>`;
+  labels.innerHTML = `<span>${fmtTime(frames[0].time)}</span><span class="now-label" style="left:${pct(nowIndex)}%">Jetzt</span><span>${fmtTime(frames[frames.length - 1].time)}</span>`;
 
   showFrame(Math.max(0, Math.min(frames.length - 1, nowIndex + (wasPlaying ? 0 : prevRel))));
 }
@@ -467,6 +474,7 @@ function showView(name) {
   document.querySelectorAll('.view').forEach((v) => v.classList.toggle('active', v.id === `view-${name}`));
   document.body.classList.toggle('on-radar', name === 'radar');
   if (name === 'radar') {
+    if (typeof L === 'undefined') { toast('Kartenbibliothek konnte nicht geladen werden – Verbindung prüfen.'); return; }
     if (!map) initMap();
     else map.invalidateSize();
     if (mapData) showFrame(mapData.nowIndex);

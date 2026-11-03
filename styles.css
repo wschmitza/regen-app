@@ -343,7 +343,7 @@ main { position: fixed; inset: 0; }
   box-shadow: 0 0 0 1px var(--line), 0 4px 12px rgba(0, 0, 0, 0.35);
 }
 .scrub input::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: var(--mood); border: 3px solid var(--bg); }
-.scrub-labels { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-top: -2px; font-variant-numeric: tabular-nums; }
+.scrub-labels { position: relative; display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-top: -2px; font-variant-numeric: tabular-nums; }
 
 .me {
   width: 18px;
@@ -456,3 +456,5 @@ main { position: fixed; inset: 0; }
 @media (prefers-reduced-motion: reduce) {
   .glow, .drops i, .me { animation: none; }
 }
+
+.scrub-labels .now-label { position: absolute; top: 0; transform: translateX(-50%); color: var(--text); font-weight: 600; }
