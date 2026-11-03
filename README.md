@@ -1,4 +1,4 @@
-# nass. – Regen auf die Minute
+# Rain Radar – Regen auf die Minute
 
 Minimalistische Regen-Web-App fürs iPhone (PWA) mit zwei Bildschirmen: **Jetzt** (wann beginnt der Regen, wie lange dauert er) und **Radar**.
 
@@ -15,4 +15,4 @@ Minimalistische Regen-Web-App fürs iPhone (PWA) mit zwei Bildschirmen: **Jetzt*
 3. Standort erlauben, optional „Regen-Alarm“ antippen.
 
 ## Grenzen
-- Der **Regen-Alarm** funktioniert nur, solange die App geöffnet ist. Push-Mitteilungen im Hintergrund brauchen zusätzlich einen kleinen Server (z. B. einen Cloudflare Worker mit Zeitplan und Web Push).
+- Der **Regen-Alarm** meldet sich nur, solange die App geöffnet ist. Push-Mitteilungen im Hintergrund sind bewusst nicht vorgesehen.

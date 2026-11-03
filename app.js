@@ -5,8 +5,8 @@ import {
 
 const $ = (s) => document.querySelector(s);
 const store = {
-  get(k, d) { try { const v = localStorage.getItem('nass.' + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
-  set(k, v) { try { localStorage.setItem('nass.' + k, JSON.stringify(v)); } catch { /* privat-Modus */ } },
+  get(k, d) { try { const v = localStorage.getItem('rainradar.' + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem('rainradar.' + k, JSON.stringify(v)); } catch { /* privat-Modus */ } },
 };
 
 const REFRESH_MS = 5 * 60e3;
