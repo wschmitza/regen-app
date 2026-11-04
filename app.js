@@ -529,7 +529,7 @@ function showView(name) {
 // Regen-Alarm
 // Mit PUSH_URL: echter Hintergrund-Push über den Cloudflare Worker (push-worker/).
 // Ohne PUSH_URL: lokale Mitteilung, nur solange die App offen ist.
-const PUSH_URL = '';
+const PUSH_URL = 'https://rain-radar-push.wschmitza.workers.dev';
 
 function alertSupported() { return 'Notification' in window && 'serviceWorker' in navigator; }
 const pushMode = () => !!PUSH_URL && 'PushManager' in window;
