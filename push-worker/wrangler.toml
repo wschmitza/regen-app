@@ -8,4 +8,4 @@ crons = ["*/5 * * * *"]
 
 [[kv_namespaces]]
 binding = "SUBS"
-id = "HIER_KV_ID_EINTRAGEN"
+id = "d798694f3d234177b01dd2e7bb6e7d8b"
