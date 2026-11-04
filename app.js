@@ -295,6 +295,7 @@ function setLoc(loc) {
   S.points = [];
   if (map) { meMarker.setLatLng([loc.lat, loc.lon]); map.setView([loc.lat, loc.lon], Math.max(map.getZoom(), 8)); }
   load();
+  pushSync().catch((e) => console.warn(e));
 }
 
 async function reverseName(lat, lon) {
@@ -315,7 +316,12 @@ function locate({ interactive = false } = {}) {
       const moved = !prev || !prev.gps || Math.hypot(prev.lat - lat, prev.lon - lon) > 0.01;
       if (moved) setLoc({ lat, lon, name: prev?.gps ? prev.name : 'Mein Standort', gps: true });
       const name = await reverseName(lat, lon);
-      if (name && S.loc?.gps) { S.loc.name = name; store.set('loc', S.loc); $('#locName').textContent = name; }
+      if (name && S.loc?.gps) {
+        S.loc.name = name;
+        store.set('loc', S.loc);
+        $('#locName').textContent = name;
+        if (moved) { store.set('pushSig', ''); pushSync().catch((e) => console.warn(e)); }
+      }
     },
     () => {
       if (interactive || !S.loc) {
@@ -520,33 +526,105 @@ function showView(name) {
 }
 
 // ---------------------------------------------------------------------------
-// Regen-Alarm (lokale Mitteilung, solange die App aktiv ist)
+// Regen-Alarm
+// Mit PUSH_URL: echter Hintergrund-Push über den Cloudflare Worker (push-worker/).
+// Ohne PUSH_URL: lokale Mitteilung, nur solange die App offen ist.
+const PUSH_URL = '';
+
 function alertSupported() { return 'Notification' in window && 'serviceWorker' in navigator; }
+const pushMode = () => !!PUSH_URL && 'PushManager' in window;
+const alertOn = () => store.get('alert', false) && alertSupported() && Notification.permission === 'granted';
+
 function renderAlertBtn() {
-  const on = store.get('alert', false) && alertSupported() && Notification.permission === 'granted';
+  const on = alertOn();
   $('#alertBtn').setAttribute('aria-pressed', String(on));
   $('#alertLabel').textContent = on ? 'Regen-Alarm an' : 'Regen-Alarm aus';
 }
+
+function b64uToBytes(s) {
+  const bin = atob(s.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((s.length + 3) % 4));
+  return Uint8Array.from(bin, (c) => c.charCodeAt(0));
+}
+async function pushPost(path, body) {
+  const r = await fetch(PUSH_URL.replace(/\/$/, '') + path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!r.ok) throw new Error(`Push-Server ${r.status}`);
+  return r.json();
+}
+
+/** Meldet das iPhone (mit aktuellem Ort) beim Push-Server an bzw. aktualisiert den Ort. */
+async function pushSync({ test = false } = {}) {
+  if (!pushMode() || !alertOn() || !S.loc) return;
+  const reg = await navigator.serviceWorker.ready;
+  let sub = await reg.pushManager.getSubscription();
+  if (!sub) {
+    const r = await fetch(PUSH_URL.replace(/\/$/, '') + '/vapid');
+    const { publicKey } = await r.json();
+    sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64uToBytes(publicKey) });
+  }
+  const { lat, lon, name } = S.loc;
+  const sig = `${sub.endpoint}|${lat}|${lon}`;
+  if (!test && store.get('pushSig', '') === sig) return; // nichts geändert
+  await pushPost('/subscribe', { subscription: sub.toJSON(), lat, lon, name, lead: ALERT_LEAD_MIN });
+  store.set('pushSig', sig);
+  if (test) await pushPost('/test', { endpoint: sub.endpoint });
+}
+
+async function pushOff() {
+  if (!pushMode()) return;
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    if (sub) {
+      await pushPost('/unsubscribe', { endpoint: sub.endpoint }).catch(() => {});
+      await sub.unsubscribe();
+    }
+  } finally {
+    store.set('pushSig', '');
+  }
+}
+
 async function toggleAlert() {
-  if (!alertSupported()) {
+  if (!alertSupported() || (PUSH_URL && !('PushManager' in window))) {
     toast('Auf dem iPhone: erst „Zum Home-Bildschirm“ hinzufügen, dann klappt’s.');
     return;
   }
-  if (store.get('alert', false) && Notification.permission === 'granted') {
+  if (alertOn()) {
     store.set('alert', false);
-  } else {
-    const p = await Notification.requestPermission();
-    if (p !== 'granted') { toast('Mitteilungen sind blockiert.'); store.set('alert', false); renderAlertBtn(); return; }
-    store.set('alert', true);
-    toast(`Ich melde mich ${ALERT_LEAD_MIN} Min vor dem Regen.`);
+    renderAlertBtn();
+    pushOff().catch(() => {});
+    toast('Regen-Alarm aus.');
+    return;
   }
+  const p = await Notification.requestPermission();
+  if (p !== 'granted') { toast('Mitteilungen sind blockiert – in den iPhone-Einstellungen erlauben.'); store.set('alert', false); renderAlertBtn(); return; }
+  store.set('alert', true);
   renderAlertBtn();
-  checkAlert();
+  if (pushMode()) {
+    try {
+      await pushSync({ test: true });
+      toast('Test-Nachricht ist unterwegs – ab jetzt warne ich auch bei geschlossener App.');
+    } catch (e) {
+      console.error(e);
+      toast('Push-Server nicht erreichbar – versuch’s gleich nochmal.');
+      store.set('alert', false);
+      renderAlertBtn();
+    }
+  } else {
+    toast(`Ich melde mich ${ALERT_LEAD_MIN} Min vor dem Regen.`);
+    checkAlert();
+  }
 }
+
+/** Lokale Mitteilung – nur ohne Push-Server (sonst gäbe es doppelte Nachrichten). */
 async function checkAlert() {
+  if (pushMode()) return;
   const a = S.analysis;
   if (!a || a.kind !== 'coming' || a.startIn > ALERT_LEAD_MIN) return;
-  if (!store.get('alert', false) || !alertSupported() || Notification.permission !== 'granted') return;
+  if (!alertOn()) return;
   const key = `${S.loc?.lat},${S.loc?.lon},${Math.round(a.startTime / 15 / 60e3)}`;
   if (store.get('alertKey', '') === key) return;
   store.set('alertKey', key);
@@ -592,6 +670,7 @@ function init() {
   $('#alertBtn').addEventListener('click', toggleAlert);
   $('#refreshBtn').addEventListener('click', () => load());
   renderAlertBtn();
+  pushSync().catch((e) => console.warn(e));
 
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 

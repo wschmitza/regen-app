@@ -1,0 +1,11 @@
+# Nur nötig, wenn der Worker per Kommandozeile (wrangler) statt im Dashboard eingerichtet wird.
+name = "rain-radar-push"
+main = "worker.js"
+compatibility_date = "2026-10-01"
+
+[triggers]
+crons = ["*/5 * * * *"]
+
+[[kv_namespaces]]
+binding = "SUBS"
+id = "HIER_KV_ID_EINTRAGEN"

@@ -1,5 +1,5 @@
 // Minimaler Service Worker: App-Hülle offline verfügbar, Daten immer frisch.
-const CACHE = 'rainradar-v5';
+const CACHE = 'rainradar-v6';
 const SHELL = ['./', 'index.html', 'styles.css', 'app.js', 'radar.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon.svg'];
 
 self.addEventListener('install', (e) => {
@@ -26,6 +26,20 @@ self.addEventListener('fetch', (e) => {
         return res;
       })
       .catch(() => caches.match(e.request).then((r) => r || caches.match('index.html')))
+  );
+});
+
+// Hintergrund-Push vom Cloudflare Worker
+self.addEventListener('push', (e) => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch { d = { body: e.data && e.data.text() }; }
+  e.waitUntil(
+    self.registration.showNotification(d.title || 'Rain Radar', {
+      body: d.body || '',
+      tag: d.tag || 'rain',
+      icon: 'icons/icon-192.png',
+      badge: 'icons/icon-192.png',
+    })
   );
 });
 

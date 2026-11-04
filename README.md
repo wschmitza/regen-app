@@ -14,5 +14,6 @@ Minimalistische Regen-Web-App fürs iPhone (PWA) mit zwei Bildschirmen: **Jetzt*
 2. In Safari öffnen → Teilen → „Zum Home-Bildschirm“.
 3. Standort erlauben, optional „Regen-Alarm“ antippen.
 
-## Grenzen
-- Der **Regen-Alarm** meldet sich nur, solange die App geöffnet ist. Push-Mitteilungen im Hintergrund sind bewusst nicht vorgesehen.
+## Regen-Alarm
+- **Mit Push-Server** (`push-worker/`, Cloudflare Worker, kostenlos): Warnung ca. 15 Min vor dem Regen, auch bei geschlossener App. Einrichtung: [push-worker/ANLEITUNG.md](push-worker/ANLEITUNG.md), danach die Worker-Adresse in `app.js` bei `PUSH_URL` eintragen.
+- **Ohne Push-Server**: Warnung nur, solange die App geöffnet ist.
