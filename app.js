@@ -10,10 +10,16 @@ const store = {
   set(k, v) { try { localStorage.setItem('rainradar.' + k, JSON.stringify(v)); } catch { /* privat-Modus */ } },
 };
 
+// Standort-Modell:
+//   lat/lon  – auf 0,01° (≈ 1 km) gerundet. Nur diese Werte gehen ins Netz (Radar, Ortsname, Push-Server).
+//   exact    – genaue GPS-Position, bleibt ausschließlich auf dem Gerät und dient nur dem Punkt auf der Karte.
+const round2 = (v) => Math.round(v * 100) / 100;
 function roundGpsLoc(loc) {
   if (!loc || !loc.gps) return loc;
-  return { ...loc, lat: Math.round(loc.lat * 100) / 100, lon: Math.round(loc.lon * 100) / 100 };
+  return { ...loc, exact: loc.exact || { lat: loc.lat, lon: loc.lon }, lat: round2(loc.lat), lon: round2(loc.lon) };
 }
+/** Position für den Punkt auf der Karte: genau, wenn bekannt – sonst der (gerundete) Ort. */
+const markerPos = (loc) => (loc?.exact ? [loc.exact.lat, loc.exact.lon] : [loc.lat, loc.lon]);
 
 const REFRESH_MS = 5 * 60e3;
 const ALERT_LEAD_MIN = 15;
@@ -292,7 +298,7 @@ function setLoc(loc) {
   store.set('loc', loc);
   $('#locName').textContent = loc.name || 'Mein Standort';
   S.points = [];
-  if (map) { meMarker.setLatLng([loc.lat, loc.lon]); map.setView([loc.lat, loc.lon], Math.max(map.getZoom(), 8)); }
+  if (map) { meMarker.setLatLng(markerPos(loc)); map.setView(markerPos(loc), Math.max(map.getZoom(), 8)); }
   load();
   pushSync().catch((e) => console.warn(e));
 }
@@ -309,14 +315,20 @@ function locate({ interactive = false } = {}) {
   if (!('geolocation' in navigator)) { if (interactive) toast('Dein Browser kann keinen Standort.'); return; }
   navigator.geolocation.getCurrentPosition(
     async (p) => {
-      // Datensparsam: GPS-Position auf 0,01° runden (≈ 1,1 km Nord-Süd, ≈ 0,7 km Ost-West).
+      // Datensparsam: Für alle Anfragen wird die Position auf 0,01° gerundet (≈ 1,1 km Nord-Süd, ≈ 0,7 km Ost-West).
       // Das Radar rechnet ohnehin mit 1-km-Zellen und mittelt über 3×3 km – die Prognose bleibt gleich.
-      // So verlässt nie die genaue Position das Gerät (Bright Sky, BigDataCloud, Push-Server).
-      const lat = Math.round(p.coords.latitude * 100) / 100;
-      const lon = Math.round(p.coords.longitude * 100) / 100;
+      // Die genaue Position (exact) bleibt auf dem Gerät und setzt nur den Punkt auf der Karte.
+      const exact = { lat: +p.coords.latitude.toFixed(5), lon: +p.coords.longitude.toFixed(5) };
+      const lat = round2(exact.lat);
+      const lon = round2(exact.lon);
       const prev = S.loc;
       const moved = !prev || !prev.gps || Math.hypot(prev.lat - lat, prev.lon - lon) > 0.005;
-      if (moved) setLoc({ lat, lon, name: prev?.gps ? prev.name : 'Mein Standort', gps: true });
+      if (moved) setLoc({ lat, lon, exact, name: prev?.gps ? prev.name : 'Mein Standort', gps: true });
+      else {
+        S.loc.exact = exact;
+        store.set('loc', S.loc);
+        meMarker?.setLatLng(markerPos(S.loc));
+      }
       const name = await reverseName(lat, lon);
       if (name && S.loc?.gps) {
         S.loc.name = name;
@@ -384,7 +396,7 @@ let playTimer = null;
 let mapBuildId = 0;
 
 function initMap() {
-  const { lat, lon } = S.loc || { lat: 51.16, lon: 10.45 };
+  const [lat, lon] = S.loc ? markerPos(S.loc) : [51.16, 10.45];
   map = L.map('map', { zoomControl: false, attributionControl: true, minZoom: 5, maxZoom: 12 }).setView([lat, lon], 8);
   map.createPane('radar').style.zIndex = 450;
   // OpenStreetMap-Standardkacheln (ohne API-Schlüssel). Im Dunkelmodus per CSS-Filter abgedunkelt.
@@ -500,7 +512,7 @@ function setupRadarControls() {
   $('#scrub').addEventListener('input', (e) => { pause(); showFrame(+e.target.value); });
   $('#recenter').addEventListener('click', () => {
     if (!S.loc) return;
-    map.setView([S.loc.lat, S.loc.lon], 9);
+    map.setView(markerPos(S.loc), 9);
     if (mapData && !mapData.home && S.radar) setMapData(S.radar, true);
   });
 }

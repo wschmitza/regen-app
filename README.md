@@ -8,7 +8,7 @@ Minimalistische Regen-Web-App fürs iPhone (PWA) mit zwei Bildschirmen: **Jetzt*
 - Radarkarte: Die Rasterdaten werden im Browser aus der DWD-Projektion (polarstereographisch) exakt nach Web-Mercator umgerechnet. Alle Bilder werden vor dem Anzeigen vollständig geladen.
 - Karte: © OpenStreetMap (ohne API-Schlüssel) · Ortssuche: Open-Meteo · Ortsname: BigDataCloud.
 - Abdeckung: Deutschland und Grenzregionen.
-- Datenschutz: Der GPS-Standort wird auf dem Gerät auf 0,01° (≈ 1 km) gerundet, bevor er an Radar-, Ortsnamen- oder Push-Dienst geht. Die Prognose verliert dadurch nichts (Radarauflösung 1 km, Mittelung über 3×3 km).
+- Datenschutz: Der GPS-Standort wird auf dem Gerät auf 0,01° (≈ 1 km) gerundet, bevor er an Radar-, Ortsnamen- oder Push-Dienst geht. Die Prognose verliert dadurch nichts (Radarauflösung 1 km, Mittelung über 3×3 km). Die genaue Position bleibt auf dem Gerät und setzt nur den Punkt auf der Radarkarte.
 
 ## Aufs iPhone bringen
 1. Ordner per HTTPS hosten, z. B. mit GitHub Pages (Settings → Pages → Branch wählen). Die App liegt dann unter `https://wschmitza.github.io/regen-app/`.
