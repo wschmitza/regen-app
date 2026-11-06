@@ -72,8 +72,8 @@ export default {
         const rec = body.endpoint ? await env.SUBS.get(`sub:${await subId(body.endpoint)}`, 'json') : null;
         if (!rec) return json({ error: 'nicht angemeldet' }, 404);
         const res = await sendPush(env, rec.subscription, {
-          title: 'Regenzeit ☔',
-          body: `Regen-Alarm ist aktiv für ${rec.name || 'deinen Ort'}. Ich melde mich ${rec.lead} Min vorher.`,
+          title: 'Regen-Alarm ist aktiv ☔',
+          body: `Ich warne dich ${rec.lead} Min vor dem Regen in ${rec.name || 'deiner Gegend'}.`,
           tag: 'rain-test',
         });
         return json({ ok: res.ok, status: res.status, detail: res.ok ? undefined : await res.text() }, res.ok ? 200 : 502);
