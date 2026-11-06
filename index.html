@@ -6,7 +6,16 @@
   <title>Rain Radar</title>
   <meta name="description" content="Minutengenau: Wann regnet es – und wie lange?" />
   <meta name="theme-color" content="#0A0D14" media="(prefers-color-scheme: dark)" />
-  <meta name="theme-color" content="#F2F4F8" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#D9DDE4" media="(prefers-color-scheme: light)" />
+  <script>
+    // Farbschema vor dem ersten Zeichnen setzen (kein Aufblitzen).
+    (function () {
+      var p = 'auto';
+      try { p = JSON.parse(localStorage.getItem('rainradar.theme')) || 'auto'; } catch (e) {}
+      if (p !== 'light' && p !== 'dark') p = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      document.documentElement.dataset.scheme = p;
+    })();
+  </script>
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -104,6 +113,14 @@
       </button>
       <input id="search" type="search" placeholder="Stadt suchen …" autocomplete="off" enterkeyhint="search" />
       <ul id="results" class="results"></ul>
+      <div class="setting">
+        <span>Darstellung</span>
+        <div class="seg" id="themeSeg" role="group" aria-label="Darstellung">
+          <button type="button" data-theme="auto" aria-pressed="true">Auto</button>
+          <button type="button" data-theme="light" aria-pressed="false">Hell</button>
+          <button type="button" data-theme="dark" aria-pressed="false">Dunkel</button>
+        </div>
+      </div>
       <button value="cancel" class="close">Schließen</button>
     </form>
   </dialog>

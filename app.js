@@ -2,6 +2,7 @@ import {
   fetchRadar, pointSeries, minuteSeries, analyze, intensity, insideGrid,
   buildImages, RAIN_MIN,
 } from './radar.js';
+import { spruch } from './sprueche.js';
 
 const $ = (s) => document.querySelector(s);
 const store = {
@@ -20,6 +21,7 @@ const S = {
   loading: false,
   ctrl: null,
   lastLoad: 0,
+  temp: null, // °C, für temperaturabhängige Sprüche
 };
 
 // ---------------------------------------------------------------------------
@@ -36,16 +38,7 @@ function bigNumber(min) {
   return `${h}:${m}<small>Std</small>`;
 }
 
-const TAGS = {
-  dry: ['Schirm bleibt zu.', 'Raus mit dir.', 'Trockener wird’s nicht.', 'Wäsche kann raus.'],
-  comingSoon: ['Beeil dich.', 'Jetzt oder nie.', 'Lauf, Forrest.'],
-  comingLater: ['Noch Zeit für einen Kaffee.', 'Kein Stress. Noch.', 'Schirm schon mal einpacken.'],
-  light: ['Nur Niesel. Stell dich nicht so an.', 'Kapuze reicht.', 'Frisur in Gefahr.'],
-  moderate: ['Kapuze auf.', 'Schirm raus.', 'Das wird nass.'],
-  heavy: ['Drinnen bleiben. Ernsthaft.', 'Schirm reicht nicht.', 'Land unter.'],
-  long: ['Richtet sich häuslich ein.', 'Das wird heute nix mehr.', 'Couch-Wetter.'],
-};
-const pick = (arr) => arr[Math.floor(Date.now() / 3.6e6) % arr.length];
+const tagFor = (kategorie) => spruch(kategorie, { temp: S.temp });
 
 // ---------------------------------------------------------------------------
 // Hero
@@ -67,27 +60,27 @@ function renderHero() {
     big.textContent = 'Trocken.';
     big.classList.add('word');
     sub.innerHTML = `Kein Tropfen bis mindestens <b>${fmtTime(a.horizon)}</b>.`;
-    tag.textContent = pick(TAGS.dry);
+    tag.textContent = tagFor('dry');
   } else if (a.kind === 'coming') {
     kicker.textContent = `${ADJ[lvl.key]} Regen in`;
     big.innerHTML = bigNumber(a.startIn);
     sub.innerHTML = a.openEnd
       ? `Ab <b>${fmtTime(a.startTime)}</b> – und hält danach erst mal an.`
       : `Ab <b>${fmtTime(a.startTime)}</b> · etwa <b>${fmtDur(a.duration)}</b> lang.`;
-    tag.textContent = state === 'heavy' ? pick(TAGS.heavy) : a.startIn <= 10 ? pick(TAGS.comingSoon) : pick(TAGS.comingLater);
+    tag.textContent = tagFor(state === 'heavy' ? 'heavyComing' : a.startIn <= 10 ? 'comingSoon' : 'comingLater');
   } else if (a.kind === 'raining') {
     const nowLvl = intensity(a.now);
     kicker.textContent = `${ADJ[nowLvl.key]} Regen – noch`;
     big.innerHTML = bigNumber(a.endIn);
     sub.innerHTML = `Gegen <b>${fmtTime(a.endTime)}</b> ist Schluss.`;
-    tag.textContent = pick(TAGS[nowLvl.key === 'extreme' ? 'heavy' : nowLvl.key] || TAGS.moderate);
+    tag.textContent = tagFor(['light', 'moderate', 'heavy', 'extreme'].includes(nowLvl.key) ? nowLvl.key : 'moderate');
   } else if (a.kind === 'raining-long') {
     const nowLvl = intensity(a.now);
     kicker.textContent = `${ADJ[nowLvl.key]} Regen`;
     big.textContent = 'Dauer­regen.';
     big.classList.add('word');
     sub.innerHTML = `Kein Ende vor <b>${fmtTime(a.horizon)}</b> in Sicht.`;
-    tag.textContent = pick(TAGS.long);
+    tag.textContent = tagFor('long');
   }
   document.body.dataset.state = state;
 }
@@ -282,6 +275,7 @@ async function loadTemp(lat, lon, signal) {
     if (!r.ok) return;
     const j = await r.json();
     const t = j.weather?.temperature;
+    S.temp = typeof t === 'number' ? t : null;
     $('#temp').textContent = typeof t === 'number' ? `${Math.round(t)}°` : '';
   } catch { /* Temperatur ist Beiwerk */ }
 }
@@ -661,7 +655,32 @@ function makeDrops() {
   box.innerHTML = html;
 }
 
+// ---------------------------------------------------------------------------
+// Darstellung: Automatisch (System) · Hell · Dunkel
+const darkMq = matchMedia('(prefers-color-scheme: dark)');
+function applyTheme() {
+  const pref = store.get('theme', 'auto');
+  const scheme = pref === 'auto' ? (darkMq.matches ? 'dark' : 'light') : pref;
+  const changed = document.documentElement.dataset.scheme !== scheme;
+  document.documentElement.dataset.scheme = scheme;
+  const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
+  document.querySelectorAll('meta[name="theme-color"]').forEach((m) => { m.removeAttribute('media'); m.content = bg; });
+  document.querySelectorAll('#themeSeg button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.theme === pref)));
+  if (changed) renderChart();
+}
+function setupTheme() {
+  applyTheme();
+  darkMq.addEventListener?.('change', applyTheme);
+  $('#themeSeg').addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-theme]');
+    if (!b) return;
+    store.set('theme', b.dataset.theme);
+    applyTheme();
+  });
+}
+
 function init() {
+  setupTheme();
   makeDrops();
   setupChartScrub();
   setupSheet();
