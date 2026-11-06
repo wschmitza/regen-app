@@ -1,4 +1,4 @@
-# Rain Radar – Regen auf die Minute
+# Regenzeit – Regen auf die Minute
 
 Minimalistische Regen-Web-App fürs iPhone (PWA) mit zwei Bildschirmen: **Jetzt** (wann beginnt der Regen, wie lange dauert er) und **Radar**.
 

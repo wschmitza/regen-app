@@ -1,4 +1,4 @@
-# Push-Server für Rain Radar einrichten (Cloudflare, kostenlos)
+# Push-Server für Regenzeit einrichten (Cloudflare, kostenlos)
 
 Dauer: ca. 15 Minuten. Du brauchst nur den Browser.
 
@@ -36,7 +36,7 @@ Dauer: ca. 15 Minuten. Du brauchst nur den Browser.
 3. Diese Adresse in `app.js` bei `PUSH_URL` eintragen (oder an Claude schicken).
 
 ## 7. Auf dem iPhone
-1. Rain Radar komplett schließen und neu öffnen.
+1. Regenzeit komplett schließen und neu öffnen.
 2. **Regen-Alarm** antippen → Mitteilungen erlauben.
 3. Nach wenigen Sekunden kommt eine Test-Nachricht. Fertig.
 

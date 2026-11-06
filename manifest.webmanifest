@@ -1,6 +1,6 @@
 {
-  "name": "Rain Radar – Regen auf die Minute",
-  "short_name": "Rain Radar",
+  "name": "Regenzeit – Regen auf die Minute",
+  "short_name": "Regenzeit",
   "description": "Minutengenau: Wann regnet es – und wie lange?",
   "lang": "de",
   "start_url": "./",

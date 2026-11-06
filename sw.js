@@ -1,5 +1,5 @@
 // Minimaler Service Worker: App-Hülle offline verfügbar, Daten immer frisch.
-const CACHE = 'rainradar-v10';
+const CACHE = 'regenzeit-v11';
 const SHELL = ['./', 'index.html', 'styles.css', 'app.js', 'radar.js', 'sprueche.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon.svg'];
 
 self.addEventListener('install', (e) => {
@@ -34,7 +34,7 @@ self.addEventListener('push', (e) => {
   let d = {};
   try { d = e.data ? e.data.json() : {}; } catch { d = { body: e.data && e.data.text() }; }
   e.waitUntil(
-    self.registration.showNotification(d.title || 'Rain Radar', {
+    self.registration.showNotification(d.title || 'Regenzeit', {
       body: d.body || '',
       tag: d.tag || 'rain',
       icon: 'icons/icon-192.png',

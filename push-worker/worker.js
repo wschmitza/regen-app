@@ -1,4 +1,4 @@
-// Rain Radar – Push-Server (Cloudflare Worker, kostenloser Tarif)
+// Regenzeit – Push-Server (Cloudflare Worker, kostenloser Tarif)
 //
 // Prüft alle 5 Minuten (Cron) für jedes angemeldete iPhone die DWD-Radarvorhersage
 // am gespeicherten Ort und schickt eine Web-Push-Nachricht, kurz bevor Regen kommt.
@@ -72,7 +72,7 @@ export default {
         const rec = body.endpoint ? await env.SUBS.get(`sub:${await subId(body.endpoint)}`, 'json') : null;
         if (!rec) return json({ error: 'nicht angemeldet' }, 404);
         const res = await sendPush(env, rec.subscription, {
-          title: 'Rain Radar ☔',
+          title: 'Regenzeit ☔',
           body: `Regen-Alarm ist aktiv für ${rec.name || 'deinen Ort'}. Ich melde mich ${rec.lead} Min vorher.`,
           tag: 'rain-test',
         });
