@@ -1,5 +1,5 @@
 // Minimaler Service Worker: App-Hülle offline verfügbar, Daten immer frisch.
-const CACHE = 'rainradar-v8';
+const CACHE = 'rainradar-v9';
 const SHELL = ['./', 'index.html', 'styles.css', 'app.js', 'radar.js', 'sprueche.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon.svg'];
 
 self.addEventListener('install', (e) => {

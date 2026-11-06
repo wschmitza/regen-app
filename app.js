@@ -10,11 +10,16 @@ const store = {
   set(k, v) { try { localStorage.setItem('rainradar.' + k, JSON.stringify(v)); } catch { /* privat-Modus */ } },
 };
 
+function roundGpsLoc(loc) {
+  if (!loc || !loc.gps) return loc;
+  return { ...loc, lat: Math.round(loc.lat * 100) / 100, lon: Math.round(loc.lon * 100) / 100 };
+}
+
 const REFRESH_MS = 5 * 60e3;
 const ALERT_LEAD_MIN = 15;
 
 const S = {
-  loc: store.get('loc', null), // {lat, lon, name, gps}
+  loc: roundGpsLoc(store.get('loc', null)), // {lat, lon, name, gps}
   radar: null,
   points: [],
   analysis: null,
@@ -304,10 +309,13 @@ function locate({ interactive = false } = {}) {
   if (!('geolocation' in navigator)) { if (interactive) toast('Dein Browser kann keinen Standort.'); return; }
   navigator.geolocation.getCurrentPosition(
     async (p) => {
-      const lat = +p.coords.latitude.toFixed(4);
-      const lon = +p.coords.longitude.toFixed(4);
+      // Datensparsam: GPS-Position auf 0,01° runden (≈ 1,1 km Nord-Süd, ≈ 0,7 km Ost-West).
+      // Das Radar rechnet ohnehin mit 1-km-Zellen und mittelt über 3×3 km – die Prognose bleibt gleich.
+      // So verlässt nie die genaue Position das Gerät (Bright Sky, BigDataCloud, Push-Server).
+      const lat = Math.round(p.coords.latitude * 100) / 100;
+      const lon = Math.round(p.coords.longitude * 100) / 100;
       const prev = S.loc;
-      const moved = !prev || !prev.gps || Math.hypot(prev.lat - lat, prev.lon - lon) > 0.01;
+      const moved = !prev || !prev.gps || Math.hypot(prev.lat - lat, prev.lon - lon) > 0.005;
       if (moved) setLoc({ lat, lon, name: prev?.gps ? prev.name : 'Mein Standort', gps: true });
       const name = await reverseName(lat, lon);
       if (name && S.loc?.gps) {
