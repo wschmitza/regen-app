@@ -1,5 +1,5 @@
 // Minimaler Service Worker: App-Hülle offline verfügbar, Daten immer frisch.
-const CACHE = 'regenzeit-v11';
+const CACHE = 'regenzeit-v14';
 const SHELL = ['./', 'index.html', 'styles.css', 'app.js', 'radar.js', 'sprueche.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon.svg'];
 
 self.addEventListener('install', (e) => {

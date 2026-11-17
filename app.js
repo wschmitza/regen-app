@@ -94,6 +94,27 @@ function renderHero() {
     tag.textContent = tagFor('long');
   }
   document.body.dataset.state = state;
+  fitHero();
+}
+
+// Große Überschrift so weit verkleinern, dass sie nicht unter die Ortsauswahl rutscht
+// und (im Querformat) nicht unten über den Rand hinausragt.
+function fitHero() {
+  const big = $('#big');
+  const kicker = $('#kicker');
+  const top = document.querySelector('.top');
+  big.style.fontSize = '';
+  if (!kicker.offsetParent) return; // Radar-Ansicht aktiv
+  const hero = $('#hero');
+  const view = $('#view-now');
+  const limit = top.getBoundingClientRect().bottom + 6;
+  const floor = view.getBoundingClientRect().bottom - parseFloat(getComputedStyle(view).paddingBottom) + 1;
+  const tooBig = () => kicker.getBoundingClientRect().top < limit || hero.getBoundingClientRect().bottom > floor;
+  let size = parseFloat(getComputedStyle(big).fontSize);
+  while (tooBig() && size > 40) {
+    size -= 4;
+    big.style.fontSize = size + 'px';
+  }
 }
 
 function heroMessage(kicker, word, sub, state = 'error') {
@@ -104,6 +125,7 @@ function heroMessage(kicker, word, sub, state = 'error') {
   $('#sub').innerHTML = sub;
   $('#tag').textContent = '';
   document.body.dataset.state = state;
+  fitHero();
 }
 
 // ---------------------------------------------------------------------------
@@ -536,6 +558,7 @@ function showView(name) {
   } else {
     pause();
     renderChart();
+    fitHero();
   }
 }
 
@@ -728,7 +751,8 @@ function init() {
     else renderNow();
   });
   let rz;
-  addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(renderChart, 120); });
+  addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { renderChart(); fitHero(); if (map) map.invalidateSize(); }, 120); });
+  document.fonts?.ready.then(fitHero);
 }
 
 init();
