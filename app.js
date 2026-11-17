@@ -94,6 +94,22 @@ function renderHero() {
     tag.textContent = tagFor('long');
   }
   document.body.dataset.state = state;
+  fitHero();
+}
+
+// Große Überschrift so weit verkleinern, dass sie nicht unter die Ortsauswahl rutscht.
+function fitHero() {
+  const big = $('#big');
+  const kicker = $('#kicker');
+  const top = document.querySelector('.top');
+  big.style.fontSize = '';
+  if (!kicker.offsetParent) return; // Radar-Ansicht aktiv
+  const limit = top.getBoundingClientRect().bottom + 6;
+  let size = parseFloat(getComputedStyle(big).fontSize);
+  while (kicker.getBoundingClientRect().top < limit && size > 44) {
+    size -= 4;
+    big.style.fontSize = size + 'px';
+  }
 }
 
 function heroMessage(kicker, word, sub, state = 'error') {
@@ -104,6 +120,7 @@ function heroMessage(kicker, word, sub, state = 'error') {
   $('#sub').innerHTML = sub;
   $('#tag').textContent = '';
   document.body.dataset.state = state;
+  fitHero();
 }
 
 // ---------------------------------------------------------------------------
@@ -536,6 +553,7 @@ function showView(name) {
   } else {
     pause();
     renderChart();
+    fitHero();
   }
 }
 
@@ -728,7 +746,8 @@ function init() {
     else renderNow();
   });
   let rz;
-  addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(renderChart, 120); });
+  addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { renderChart(); fitHero(); }, 120); });
+  document.fonts?.ready.then(fitHero);
 }
 
 init();
