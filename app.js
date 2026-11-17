@@ -717,7 +717,27 @@ function setupTheme() {
   });
 }
 
+// iOS 26 (Home-Bildschirm-App): Die Bildfläche endet teils vor dem unteren Bildschirmrand.
+// Fehlenden Streifen messen und Ansicht samt Bedienelementen bis an den Rand verlängern.
+function fixViewportGap() {
+  let gap = 0;
+  const standalone = navigator.standalone || matchMedia('(display-mode: standalone)').matches;
+  if (standalone) {
+    const probe = document.createElement('div');
+    probe.style.cssText = 'position:fixed;top:0;bottom:0;width:0;visibility:hidden;pointer-events:none';
+    document.body.appendChild(probe);
+    const h = probe.getBoundingClientRect().height;
+    probe.remove();
+    const portrait = innerHeight >= innerWidth;
+    const screenH = portrait ? Math.max(screen.width, screen.height) : Math.min(screen.width, screen.height);
+    gap = Math.round(screenH - h);
+    if (gap < 0 || gap > 140) gap = 0; // Unplausibel → nichts verändern
+  }
+  document.documentElement.style.setProperty('--gap', gap + 'px');
+}
+
 function init() {
+  fixViewportGap();
   setupTheme();
   makeDrops();
   setupChartScrub();
@@ -746,7 +766,7 @@ function init() {
     else renderNow();
   });
   let rz;
-  addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { renderChart(); fitHero(); }, 120); });
+  addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { fixViewportGap(); renderChart(); fitHero(); if (map) map.invalidateSize(); }, 120); });
   document.fonts?.ready.then(fitHero);
 }
 

@@ -28,6 +28,7 @@
   --font-body: 'Inter', system-ui, -apple-system, sans-serif;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --gap: 0px; /* iOS-26-Fehler: fehlender Streifen am unteren Rand (per JS gemessen) */
   color-scheme: dark;
 }
 
@@ -90,7 +91,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 }
 @keyframes drift { to { transform: translate(-12vmax, 10vmax) scale(1.08); } }
 
-.drops { position: fixed; inset: 0; pointer-events: none; overflow: hidden; opacity: 0; transition: opacity 0.6s; }
+.drops { position: fixed; inset: 0 0 calc(-1 * var(--gap)); pointer-events: none; overflow: hidden; opacity: 0; transition: opacity 0.6s; }
 body[data-state='raining'] .drops,
 body[data-state='raining-long'] .drops,
 body[data-state='heavy'] .drops { opacity: 1; }
@@ -149,7 +150,7 @@ body.on-radar .temp { background: var(--surface-strong); border-color: var(--lin
 body.on-radar .temp { padding: 6px 12px; font-size: 17px; }
 
 /* --- Views ------------------------------------------------------------------ */
-main { position: fixed; inset: 0; }
+main { position: fixed; inset: 0 0 calc(-1 * var(--gap)); }
 .view { position: absolute; inset: 0; display: none; }
 .view.active { display: flex; }
 
@@ -390,7 +391,7 @@ main { position: fixed; inset: 0; }
   position: fixed;
   z-index: 30;
   left: 50%;
-  bottom: calc(var(--safe-bottom) + 10px);
+  bottom: calc(var(--safe-bottom) + 10px - var(--gap));
   transform: translateX(-50%);
   display: grid;
   grid-template-columns: 1fr 1fr;
