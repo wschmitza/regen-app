@@ -18,3 +18,9 @@ Minimalistische Regen-Web-App fürs iPhone (PWA) mit zwei Bildschirmen: **Jetzt*
 ## Regen-Alarm
 - **Mit Push-Server** (`push-worker/`, Cloudflare Worker, kostenlos): Warnung ca. 15 Min vor dem Regen, auch bei geschlossener App. Einrichtung: [push-worker/ANLEITUNG.md](push-worker/ANLEITUNG.md), danach die Worker-Adresse in `app.js` bei `PUSH_URL` eintragen.
 - **Ohne Push-Server**: Warnung nur, solange die App geöffnet ist.
+
+## Regen-Optik
+- **Fenster** (Standard): Bei Regen erscheinen Tropfen auf einer Glasscheibe, die haften, zusammenlaufen und mit Spur abperlen. Anzahl und Größe folgen der aktuellen Regenintensität (mm/h). Code: `window-rain.js` (Canvas 2D, keine externen Bibliotheken).
+- **Striche**: die ursprüngliche Variante mit fallenden blauen Strichen.
+- Umschalten: Ortsauswahl antippen → „Regen-Optik“. Die Wahl wird auf dem Gerät gespeichert.
+- Vorschau ohne echten Regen: `?regen=<mm/h>` an die Adresse hängen, z. B. `…/regen-app/?regen=1` (leicht), `?regen=8` (mäßig), `?regen=40` (heftig).

@@ -32,6 +32,7 @@
 <body>
   <div class="glow" aria-hidden="true"></div>
   <div class="drops" aria-hidden="true"></div>
+  <canvas class="pane" aria-hidden="true"></canvas>
 
   <header class="top">
     <button id="locBtn" class="loc" aria-label="Ort wählen">
@@ -119,6 +120,13 @@
           <button type="button" data-theme="auto" aria-pressed="true">Auto</button>
           <button type="button" data-theme="light" aria-pressed="false">Hell</button>
           <button type="button" data-theme="dark" aria-pressed="false">Dunkel</button>
+        </div>
+      </div>
+      <div class="setting">
+        <span>Regen-Optik</span>
+        <div class="seg" id="rainSeg" role="group" aria-label="Regen-Optik">
+          <button type="button" data-rainfx="window" aria-pressed="true">Fenster</button>
+          <button type="button" data-rainfx="lines" aria-pressed="false">Striche</button>
         </div>
       </div>
       <button value="cancel" class="close">Schließen</button>
