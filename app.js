@@ -3,6 +3,7 @@ import {
   buildImages, RAIN_MIN,
 } from './radar.js';
 import { spruch } from './sprueche.js';
+import { rainWindow } from './window-rain.js';
 
 const $ = (s) => document.querySelector(s);
 const store = {
@@ -94,6 +95,7 @@ function renderHero() {
     tag.textContent = tagFor('long');
   }
   document.body.dataset.state = state;
+  syncRain();
   fitHero();
 }
 
@@ -125,6 +127,7 @@ function heroMessage(kicker, word, sub, state = 'error') {
   $('#sub').innerHTML = sub;
   $('#tag').textContent = '';
   document.body.dataset.state = state;
+  syncRain();
   fitHero();
 }
 
@@ -699,6 +702,35 @@ function makeDrops() {
 }
 
 // ---------------------------------------------------------------------------
+// Regen-Optik: „Fenster“ (Tropfen auf der Scheibe) oder „Striche“ (ursprüngliche Variante).
+// Zum Ausprobieren ohne echten Regen: ?regen=<mm/h>, z. B. …/index.html?regen=8
+const RAIN_STATES = ['raining', 'raining-long', 'heavy'];
+const forcedRain = (() => { const v = parseFloat(new URLSearchParams(location.search).get('regen')); return v > 0 ? v : null; })();
+function syncRain() {
+  const a = S.analysis;
+  const on = forcedRain != null || RAIN_STATES.includes(document.body.dataset.state);
+  const mmh = forcedRain ?? (a ? (a.now >= RAIN_MIN ? a.now : a.peak ?? 0) : 0);
+  document.body.dataset.rain = on ? 'on' : 'off';
+  rainWindow.set({ on, mmh });
+}
+function applyRainFx() {
+  const fx = store.get('rainfx', 'window');
+  document.documentElement.dataset.rainfx = fx;
+  document.querySelectorAll('#rainSeg button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.rainfx === fx)));
+  rainWindow.enable(fx === 'window');
+  syncRain();
+}
+function setupRainFx() {
+  applyRainFx();
+  $('#rainSeg').addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-rainfx]');
+    if (!b) return;
+    store.set('rainfx', b.dataset.rainfx);
+    applyRainFx();
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Darstellung: Automatisch (System) · Hell · Dunkel
 const darkMq = matchMedia('(prefers-color-scheme: dark)');
 function applyTheme() {
@@ -725,6 +757,7 @@ function setupTheme() {
 function init() {
   setupTheme();
   makeDrops();
+  setupRainFx();
   setupChartScrub();
   setupSheet();
   setupRadarControls();
